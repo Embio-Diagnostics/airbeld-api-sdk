@@ -1,0 +1,59 @@
+[build-system]
+build-backend = "hatchling.build"
+requires = ["hatchling>=1.25"]
+
+[project]
+authors = [{name = "Embio Diagnostics Ltd", email = "l.dougiakis@embiodiagnostics.eu"}]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "License :: OSI Approved :: MIT License",
+  "Typing :: Typed",
+]
+dependencies = [
+  "httpx>=0.28.1",
+  "pydantic>=2.11.7",
+  "tenacity>=9.1.2",
+]
+description = "Async Python SDK for the Airbeld backend"
+keywords = ["airbeld", "air-quality", "home-assistant"]
+license = {text = "MIT"}
+name = "airbeld-api-sdk"
+readme = "README.md"
+requires-python = ">=3.10"
+version = "0.1.1"
+
+[project.urls]
+Changelog = "https://github.com/Embio-Diagnostics/airbeld-api-sdk/blob/main/CHANGELOG.md"
+Documentation = "https://github.com/Embio-Diagnostics/airbeld-api-sdk/blob/main/README.md"
+Homepage = "https://github.com/Embio-Diagnostics/airbeld-api-sdk"
+Issues = "https://github.com/Embio-Diagnostics/airbeld-api-sdk/issues"
+Repository = "https://github.com/Embio-Diagnostics/airbeld-api-sdk"
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8",
+  "pytest-asyncio>=0.23",
+  "ruff>=0.5",
+  "mypy>=1.10",
+  "httpx>=0.27",
+  "tenacity>=8.2",
+  "pydantic>=2.7",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/airbeld"]
+
+[dependency-groups]
+dev = [
+  "pytest>=8.4.1",
+  "pytest-asyncio>=1.1.0",
+]
+
+[tool.hatch.build]
+exclude = [
+  "CLAUDE.md",
+  ".mcp.json",
+  ".claude/**",
+  "docs/**",
+]

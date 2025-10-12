@@ -1,0 +1,38 @@
+# Byte-compiled / optimized files
+__pycache__/
+*.pyc
+*.pyo
+
+# Distribution / packaging
+*.egg-info/
+dist/
+build/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Environment variables
+.env
+*.local.json
+
+# Testing and coverage
+.coverage
+.pytest_cache/
+
+# Type checking and linting
+.mypy_cache/
+.ruff_cache/
+
+# Claude Code (development only)
+.claude/
+.mcp.json
+CLAUDE.md
+
+# IDE and OS
+.DS_Store
+.vscode/
+.idea/
+*.swp
+*.swo
