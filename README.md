@@ -1,5 +1,9 @@
 # Airbeld Python SDK
 
+[![PyPI version](https://badge.fury.io/py/airbeld-api-sdk.svg)](https://pypi.org/project/airbeld-api-sdk/)
+[![Python Versions](https://img.shields.io/pypi/pyversions/airbeld-api-sdk.svg)](https://pypi.org/project/airbeld-api-sdk/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 Async Python SDK for the Airbeld API, providing access to air quality devices and telemetry data.
 
 > If you want to **contribute**, read [CONTRIBUTING](CONTRIBUTING.md) and [DEVELOPER](DEVELOPER.md).
