@@ -22,9 +22,20 @@ uv add airbeld-api-sdk
 
 ## Examples
 
-### Environment Variables
+### Running Examples
 
-Set these environment variables for the examples:
+All examples require setting environment variables before running:
+
+```bash
+# Export required environment variables
+export AIRBELD_API_BASE="https://api.airbeld.com"
+export AIRBELD_API_TOKEN="your-jwt-token-here"
+
+# Run an example
+python examples/quickstart.py
+```
+
+**Environment Variables:**
 
 - `AIRBELD_API_BASE`: API base URL (default: `https://api.airbeld.com`)
 - `AIRBELD_API_TOKEN`: JWT access token for authentication
@@ -72,6 +83,40 @@ if __name__ == "__main__":
 ```
 
 **Note:** JWT token acquisition happens outside the SDK. The SDK only handles API requests with a ready token.
+
+### Getting Latest Readings (Simplified)
+
+You can fetch the latest sensor readings without specifying a date range:
+
+```python
+import asyncio
+import os
+from airbeld import AirbeldClient
+
+async def main():
+    base_url = os.environ.get("AIRBELD_API_BASE", "https://api.airbeld.com")
+    token = os.environ["AIRBELD_API_TOKEN"]
+
+    async with AirbeldClient(token=token, base_url=base_url) as client:
+        devices = await client.async_get_devices()
+
+        if devices:
+            device = devices[0]
+
+            # Get latest readings without specifying start/end dates
+            readings = await client.async_get_readings_by_date(
+                device_id=device.id,
+                sensors=["temperature", "pm2p5", "humidity"]  # Optional filter
+            )
+
+            # Display latest values
+            for sensor_name, metric in readings.sensors.items():
+                latest = readings.get_latest_value(sensor_name)
+                print(f"{metric.display_name}: {latest} {metric.unit}")
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
 
 ## Authentication Options
 

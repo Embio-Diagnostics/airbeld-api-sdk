@@ -142,8 +142,8 @@ class AirbeldClient:
     async def async_get_readings_by_date(
         self,
         device_id: int,
-        start: datetime,
-        end: datetime,
+        start: datetime | None = None,
+        end: datetime | None = None,
         sensors: list[str] | None = None,
         aggregate: str | None = None,
     ) -> TelemetryBundle:
@@ -151,8 +151,8 @@ class AirbeldClient:
 
         Args:
             device_id: Device ID (int)
-            start: Start datetime (with timezone)
-            end: End datetime (with timezone)
+            start: Optional start datetime (with timezone). If omitted, returns latest data.
+            end: Optional end datetime (with timezone). If omitted, returns latest data.
             sensors: Optional list of sensor keys to filter (e.g., ["temperature", "pm2p5"])
             aggregate: Optional aggregation level ("hourly" or "daily")
 
@@ -166,10 +166,13 @@ class AirbeldClient:
             NetworkError: Network connectivity issues
         """
         # Build query parameters
-        params: dict[str, str] = {
-            "start": start.isoformat(),
-            "end": end.isoformat(),
-        }
+        params: dict[str, str] = {}
+
+        if start is not None:
+            params["start"] = start.isoformat()
+
+        if end is not None:
+            params["end"] = end.isoformat()
 
         if sensors:
             params["sensors"] = ",".join(sensors)

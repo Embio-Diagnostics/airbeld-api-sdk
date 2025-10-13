@@ -84,13 +84,13 @@
 - PM/CO2: ≥ 0
 - VOC/NOx: non-negative
 
-### Example Response
+### Example Response (camelCase wire format)
 ```json
 {
   "sensors": {
     "temperature": {
       "name": "temperature",
-      "display_name": "Temperature",
+      "displayName": "Temperature",
       "unit": "°C",
       "description": "Temperature level are essential for our comfort during the day.",
       "values": [
@@ -99,7 +99,7 @@
     },
     "pm2p5": {
       "name": "pm2p5",
-      "display_name": "PM 2.5",
+      "displayName": "PM 2.5",
       "unit": "µg/m³",
       "description": "The concentration of particulate matter...",
       "values": [
@@ -109,6 +109,8 @@
   }
 }
 ```
+
+**Note**: SDK automatically maps `displayName` (camelCase) to `display_name` (snake_case) in Python.
 
 ## Phase A: REST Endpoints
 
@@ -154,21 +156,19 @@
 
 ### GET /api/v1/devices/{id}/readings_by_date/
 
-**Required query params**
-- `start`: ISO 8601 with timezone, e.g., `2025-08-21T10:00:00+03:00`
-- `end`: ISO 8601 with timezone
-
 **Optional query params**
+- `start`: ISO 8601 with timezone, e.g., `2025-08-21T10:00:00+03:00`. If omitted, returns latest available data.
+- `end`: ISO 8601 with timezone. If omitted, returns latest available data.
 - `sensors`: comma-separated list of metric keys (e.g., `temperature,pm2p5,co2`)
 - `aggregate`: optional; one of `hourly|daily` for downsampling
 
-**Response structure (SensorReadingsSerializer-aligned)**
+**Response structure (SensorReadingsSerializer-aligned, camelCase wire format)**
 ```json
 {
   "sensors": {
     "temperature": {
       "name": "temperature",
-      "display_name": "Temperature", 
+      "displayName": "Temperature",
       "unit": "°C",
       "description": "Temperature level are essential...",
       "values": [
@@ -177,8 +177,8 @@
     },
     "pm2p5": {
       "name": "pm2p5",
-      "display_name": "PM 2.5",
-      "unit": "µg/m³", 
+      "displayName": "PM 2.5",
+      "unit": "µg/m³",
       "description": "The concentration of particulate matter...",
       "values": [
         {"timestamp": "2025-08-21T12:36:17+03:00", "value": 183.0}
@@ -187,6 +187,8 @@
   }
 }
 ```
+
+**Note**: SDK automatically maps `displayName` (camelCase) to `display_name` (snake_case) in Python.
 
 **Units**
 - temperature: "°C"

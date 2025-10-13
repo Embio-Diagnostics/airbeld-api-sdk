@@ -1,5 +1,14 @@
 #!/usr/bin/env python3
-"""Quickstart example for the Airbeld API SDK."""
+"""Quickstart example for the Airbeld API SDK.
+
+This example demonstrates basic SDK usage: listing devices and fetching
+recent telemetry readings.
+
+Usage:
+    export AIRBELD_API_BASE="https://api.airbeld.com"
+    export AIRBELD_API_TOKEN="your-jwt-token-here"
+    python examples/quickstart.py
+"""
 
 import asyncio
 import os
@@ -13,7 +22,6 @@ async def main():
     # Get configuration from environment variables
     base_url = os.environ.get("AIRBELD_API_BASE", "https://api.airbeld.com")
     token = os.environ.get("AIRBELD_API_TOKEN")
-
     if not token:
         print("Error: AIRBELD_API_TOKEN environment variable is required")
         return

@@ -18,11 +18,9 @@ def test_device_minimal():
     device_data = {
         "uid": "test-device-123",
         "name": "Test Device",
-        "device_type": "EOS",
+        "deviceType": "EOS",
         "status": "online",
-        "is_locked": False,
-        "created_at": "2025-08-21T10:00:00+03:00",
-        "updated_at": "2025-08-21T12:00:00+03:00",
+        "isLocked": False,
     }
 
     device = Device(**device_data)
@@ -36,23 +34,21 @@ def test_device_minimal():
 
 
 def test_device_full():
-    """Test Device with all optional fields populated."""
+    """Test Device with all optional fields populated (using camelCase as API returns)."""
     device_data = {
         "uid": "2415b867354b5e50d845",
         "name": "Living Room",
-        "display_name": "Living Room Sensor",
-        "device_type": "ATHENA",
+        "displayName": "Living Room Sensor",
+        "deviceType": "ATHENA",
         "status": "offline",
-        "is_locked": True,
-        "hardware_model": "ATHENA-v2",
-        "hardware_version": "2.1.0",
+        "isLocked": True,
+        "hardwareModel": "ATHENA-v2",
+        "hardwareVersion": "2.1.0",
         "manufacturer": "SK EMBIO Diagnostics Ltd",
-        "serial_number": "SN-67890",
-        "sector_id": "sector-001",
-        "sector_name": "Main Office / Floor 1",
+        "serialNumber": "SN-67890",
+        "sectorId": "sector-001",
+        "sectorName": "Main Office / Floor 1",
         "description": "Conference room air quality monitor",
-        "created_at": "2025-08-20T10:15:00+03:00",
-        "updated_at": "2025-08-21T12:30:00+03:00",
     }
 
     device = Device(**device_data)
@@ -184,11 +180,9 @@ def test_device_uid_validation():
         Device(
             uid="",
             name="Test",
-            device_type="EOS",
+            deviceType="EOS",
             status="online",
-            is_locked=False,
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc),
+            isLocked=False,
         )
 
     # Too long uid should fail
@@ -196,11 +190,9 @@ def test_device_uid_validation():
         Device(
             uid="x" * 256,  # Over 255 char limit
             name="Test",
-            device_type="EOS",
+            deviceType="EOS",
             status="online",
-            is_locked=False,
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc),
+            isLocked=False,
         )
 
 
