@@ -47,7 +47,7 @@ async def main():
             # This is simpler than calculating time ranges!
             readings = await client.async_get_readings_by_date(
                 device_id=device.id,
-                sensors=["temperature", "pm2p5", "humidity"],  # Optional filter
+                # sensor="temperature",  # Optional: filter to single sensor
             )
 
             # Display latest values for each sensor

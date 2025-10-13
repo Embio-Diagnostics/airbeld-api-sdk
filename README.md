@@ -45,34 +45,28 @@ python examples/quickstart.py
 ```python
 import asyncio
 import os
-from datetime import datetime, timedelta, timezone
 from airbeld import AirbeldClient
 
 async def main():
     # Initialize client (JWT token obtained outside SDK)
     base_url = os.environ.get("AIRBELD_API_BASE", "https://api.airbeld.com")
     token = os.environ["AIRBELD_API_TOKEN"]
-    
+
     async with AirbeldClient(token=token, base_url=base_url) as client:
         # Get all devices
         devices = await client.async_get_devices()
         print(f"Found {len(devices)} devices")
-        
+
         if devices:
             device = devices[0]
             print(f"Device: {device.name} ({device.status})")
-            
-            # Get recent telemetry readings
-            end = datetime.now(timezone.utc)
-            start = end - timedelta(hours=1)
-            
+
+            # Get latest telemetry readings (no date range)
             readings = await client.async_get_readings_by_date(
                 device_id=device.id,
-                start=start,
-                end=end,
-                sensors=["temperature", "pm2p5"]  # Optional sensor filter
+                sensor="temperature"  # Optional: filter to single sensor
             )
-            
+
             # Print latest temperature reading
             if "temperature" in readings.sensors:
                 latest_temp = readings.get_latest_value("temperature")
@@ -84,7 +78,7 @@ if __name__ == "__main__":
 
 **Note:** JWT token acquisition happens outside the SDK. The SDK only handles API requests with a ready token.
 
-### Getting Latest Readings (Simplified)
+### Getting Latest Readings
 
 You can fetch the latest sensor readings without specifying a date range:
 
@@ -103,11 +97,8 @@ async def main():
         if devices:
             device = devices[0]
 
-            # Get latest readings without specifying start/end dates
-            readings = await client.async_get_readings_by_date(
-                device_id=device.id,
-                sensors=["temperature", "pm2p5", "humidity"]  # Optional filter
-            )
+            # Get latest readings without specifying start_date/end_date
+            readings = await client.async_get_readings_by_date(device_id=device.id)
 
             # Display latest values
             for sensor_name, metric in readings.sensors.items():
@@ -117,6 +108,230 @@ async def main():
 if __name__ == "__main__":
     asyncio.run(main())
 ```
+
+### Getting Historical Readings
+
+Fetch sensor readings for a specific date range with hourly or daily aggregation:
+
+```python
+import asyncio
+import os
+from airbeld import AirbeldClient
+
+async def main():
+    base_url = os.environ.get("AIRBELD_API_BASE", "https://api.airbeld.com")
+    token = os.environ["AIRBELD_API_TOKEN"]
+
+    async with AirbeldClient(token=token, base_url=base_url) as client:
+        devices = await client.async_get_devices()
+
+        if devices:
+            device = devices[0]
+
+            # Get hourly readings for a specific date range
+            readings = await client.async_get_readings_by_date(
+                device_id=device.id,
+                start_date="2025-09-19",  # Format: YYYY-MM-DD or 'today'
+                end_date="2025-09-19",    # Same day = 24 hours of data
+                period="hour",            # Aggregation: 'hour' or 'day'
+                sensor="temperature"      # Optional: single sensor filter
+            )
+
+            # Access all temperature values
+            if "temperature" in readings.sensors:
+                temp_metric = readings.sensors["temperature"]
+                print(f"Temperature readings: {len(temp_metric.values)} values")
+
+                for reading in temp_metric.values:
+                    print(f"  {reading.timestamp}: {reading.value}°C")
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+## API Reference
+
+### Client Methods
+
+#### `AirbeldClient(token, base_url, timeout)`
+
+Initialize the Airbeld API client.
+
+**Parameters:**
+- `token` (str, required): JWT access token for authentication
+- `base_url` (str, optional): API base URL. Default: `"https://api.airbeld.com"`
+- `timeout` (float, optional): Request timeout in seconds. Default: `10.0`
+
+**Usage:**
+```python
+async with AirbeldClient(token=token, base_url=base_url) as client:
+    # Use client...
+```
+
+---
+
+#### `async_get_devices()`
+
+Get list of all devices.
+
+**Parameters:** None
+
+**Returns:** `list[DeviceSummary]` - List of device objects
+
+**Raises:**
+- `AuthError`: Authentication failed (401/403)
+- `ApiError`: Other API errors (4xx/5xx)
+- `NetworkError`: Network connectivity issues
+
+**Example:**
+```python
+devices = await client.async_get_devices()
+for device in devices:
+    print(f"{device.name} - {device.status}")
+```
+
+---
+
+#### `async_get_readings_by_date(device_id, start_date, end_date, sensor, period)`
+
+Get telemetry readings for a device.
+
+**Parameters:**
+- `device_id` (int, required): Device ID
+- `start_date` (str, optional): Start date in `YYYY-MM-DD` format or `'today'`. If omitted, returns latest data.
+- `end_date` (str, optional): End date in `YYYY-MM-DD` format or `'today'`. If omitted, returns latest data.
+- `sensor` (str, optional): Single sensor name to filter (e.g., `"temperature"`, `"pm2p5"`). If omitted, returns all sensors.
+- `period` (str, optional): Data aggregation period. Values: `"hour"` or `"day"`.
+
+**Returns:** `TelemetryBundle` - Object containing sensor readings
+
+**Raises:**
+- `AuthError`: Authentication failed (401/403)
+- `ApiError`: API errors including 404 (device not found), 413 (range too large)
+- `RateLimitError`: Rate limit exceeded (429)
+- `NetworkError`: Network connectivity issues
+
+**Examples:**
+```python
+# Get latest readings (no date range)
+readings = await client.async_get_readings_by_date(device_id=123)
+
+# Get historical readings with date range
+readings = await client.async_get_readings_by_date(
+    device_id=123,
+    start_date="2025-09-19",
+    end_date="2025-09-19",
+    period="hour"
+)
+
+# Filter to single sensor
+readings = await client.async_get_readings_by_date(
+    device_id=123,
+    sensor="temperature"
+)
+```
+
+---
+
+#### `set_token(new_token)`
+
+Update the authorization token at runtime.
+
+**Parameters:**
+- `new_token` (str, required): New JWT access token
+
+**Returns:** None
+
+**Example:**
+```python
+client.set_token(refreshed_token)
+```
+
+### Authentication Functions
+
+#### `async_login(base_url, email, password, timeout)`
+
+Authenticate with email and password to obtain JWT tokens.
+
+**Parameters:**
+- `base_url` (str, required): API base URL
+- `email` (str, required): User email address
+- `password` (str, required): User password
+- `timeout` (float, optional): Request timeout in seconds. Default: `10.0`
+
+**Returns:** `TokenSet` - Object containing access token, refresh token, expires_in, and token_type
+
+**Raises:**
+- `AuthError`: Invalid credentials (401)
+- `RateLimitError`: Rate limit exceeded (429)
+- `ApiError`: Other API errors (4xx/5xx)
+- `NetworkError`: Network connectivity issues
+
+**Example:**
+```python
+from airbeld import async_login
+
+token_set = await async_login(
+    base_url="https://api.airbeld.com",
+    email="user@example.com",
+    password="password"
+)
+print(f"Access token: {token_set.access_token}")
+print(f"Expires in: {token_set.expires_in} seconds")
+```
+
+### Data Models
+
+#### `DeviceSummary`
+
+Device information object.
+
+**Attributes:**
+- `uid` (str): Unique device identifier
+- `id` (int): Device ID
+- `name` (str): Device name
+- `display_name` (str | None): Custom display name
+- `description` (str): Device description
+- `type` (str | None): Device type
+- `is_locked` (bool): Whether device is locked
+- `status` (str): Device status - `"online"` or `"offline"`
+- `sector` (str | None): Sector name
+- `sector_id` (int | None): Sector ID
+- `location` (str | None): Location name
+- `location_id` (int | None): Location ID
+- `timezone` (str): IANA timezone
+
+#### `TelemetryBundle`
+
+Container for sensor telemetry data.
+
+**Attributes:**
+- `sensors` (dict[str, TelemetryMetric]): Dictionary of sensor metrics by sensor name
+
+**Methods:**
+- `get_latest_value(metric_name: str) -> float | None`: Get the latest value for a specific sensor
+- `pm2_5` (property): Shortcut to access PM 2.5 metric (returns `TelemetryMetric | None`)
+
+#### `TelemetryMetric`
+
+Individual sensor metric with metadata and values.
+
+**Attributes:**
+- `name` (str): Sensor name
+- `display_name` (str | None): Display name
+- `unit` (str): Measurement unit
+- `description` (str | None): Sensor description
+- `values` (list[TelemetryValue]): List of readings
+
+#### `TelemetryValue`
+
+Single sensor reading.
+
+**Attributes:**
+- `timestamp` (datetime): Reading timestamp
+- `value` (float | None): Measured value
+
+---
 
 ## Authentication Options
 

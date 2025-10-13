@@ -1,7 +1,6 @@
 """Tests for Airbeld API client."""
 
 import json
-from datetime import datetime, timezone
 from unittest.mock import MagicMock, patch
 
 import httpx
@@ -118,11 +117,8 @@ async def test_readings_by_date_uses_id():
         )
 
         async with AirbeldClient(token="test-token") as client:
-            start = datetime(2025, 8, 21, 10, 0, tzinfo=timezone.utc)
-            end = datetime(2025, 8, 21, 12, 0, tzinfo=timezone.utc)
-
             readings = await client.async_get_readings_by_date(
-                device_id=device_id, start=start, end=end
+                device_id=device_id, start_date="2025-08-21", end_date="2025-08-21"
             )
 
             # Verify correct path was called
@@ -132,9 +128,14 @@ async def test_readings_by_date_uses_id():
             assert str(device_id) in called_url
             assert "readings_by_date" in called_url
 
+            # Verify query params use correct names
+            call_kwargs = call_args[1]  # kwargs
+            params = call_kwargs.get("params", {})
+            assert params["start-date"] == "2025-08-21"
+            assert params["end-date"] == "2025-08-21"
+
             # Verify response structure
             assert isinstance(readings, TelemetryBundle)
-            assert readings.device_uid == str(device_id)  # device_uid set from device_id
             assert "temperature" in readings.sensors
 
 
@@ -238,15 +239,14 @@ async def test_get_latest_readings_without_dates():
             assert str(device_id) in called_url
             assert "readings_by_date" in called_url
 
-            # Verify query params do NOT contain start/end
+            # Verify query params do NOT contain start-date/end-date
             call_kwargs = call_args[1]  # kwargs
             params = call_kwargs.get("params", {})
-            assert "start" not in params
-            assert "end" not in params
+            assert "start-date" not in params
+            assert "end-date" not in params
 
             # Verify response structure
             assert isinstance(readings, TelemetryBundle)
-            assert readings.device_uid == str(device_id)
             assert "temperature" in readings.sensors
             assert "pm2p5" in readings.sensors
 

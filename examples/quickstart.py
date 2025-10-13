@@ -12,7 +12,6 @@ Usage:
 
 import asyncio
 import os
-from datetime import datetime, timedelta, timezone
 
 from airbeld import AirbeldClient
 
@@ -47,16 +46,10 @@ async def main():
             device = devices[0]
             print(f"\nFetching readings for device: {device.name} (ID: {device.id})")
 
-            # Get readings for a small time window (last 30 minutes)
-            end = datetime.now(timezone.utc)
-            start = end - timedelta(minutes=30)
-
+            # Get latest readings (no date range specified)
             readings = await client.async_get_readings_by_date(
                 device_id=device.id,
-                start=start,
-                end=end,
-                sensors=["temperature"],  # Focus on temperature only
-                aggregate=None,
+                sensor="temperature",  # Focus on temperature only
             )
 
             # Print latest temperature value if available

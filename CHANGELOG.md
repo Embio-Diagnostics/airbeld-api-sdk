@@ -2,6 +2,36 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.0] - 2025-10-14
+
+### Breaking Changes
+
+- **Query parameter names updated** to match actual API specification:
+  - `start` → `start_date` (now accepts `YYYY-MM-DD` string format or `'today'`, not datetime objects)
+  - `end` → `end_date` (now accepts `YYYY-MM-DD` string format or `'today'`, not datetime objects)
+  - `sensors` → `sensor` (now accepts single sensor name string, not a list)
+  - `aggregate` → `period` (values: `'hour'` or `'day'`)
+
+### Removed
+
+- **Removed `device_uid` field** from `TelemetryBundle` model - the API response does not include device identifiers; the device is known from request context
+
+### Added
+
+- New example `examples/get_historical_readings.py` demonstrating how to fetch multiple readings for a date range with hourly/daily aggregation
+- Comprehensive documentation for historical readings in README
+
+### Changed
+
+- Updated all examples to use correct API parameter names
+- Updated API contract documentation to reflect actual Swagger specification
+- Simplified `TelemetryBundle` to match actual API response structure (sensors only)
+
+### Fixed
+
+- Query parameters now match the actual API specification from Swagger
+- Date format changed from ISO 8601 timestamps to `YYYY-MM-DD` strings as required by the API
+
 ## [0.2.0] - 2025-10-13
 
 ### Added

@@ -21,7 +21,7 @@ license = {text = "MIT"}
 name = "airbeld-api-sdk"
 readme = "README.md"
 requires-python = ">=3.10"
-version = "0.2.0"
+version = "0.3.0"
 
 [project.urls]
 Changelog = "https://github.com/Embio-Diagnostics/airbeld-api-sdk/blob/main/CHANGELOG.md"
