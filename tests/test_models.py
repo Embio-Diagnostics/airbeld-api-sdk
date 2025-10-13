@@ -99,17 +99,15 @@ def test_telemetry_metric():
 
 def test_telemetry_bundle_empty():
     """Test TelemetryBundle with no sensors."""
-    bundle = TelemetryBundle(device_uid="test-device")
-    assert bundle.device_uid == "test-device"
+    bundle = TelemetryBundle()
     assert bundle.sensors == {}
     assert bundle.pm2_5 is None
     assert bundle.get_latest_value("temperature") is None
 
 
 def test_telemetry_bundle_with_sensors():
-    """Test TelemetryBundle with multiple sensors."""
+    """Test TelemetryBundle with multiple sensors (matches actual API response)."""
     bundle_data = {
-        "device_uid": "test-device-123",
         "sensors": {
             "temperature": {
                 "name": "temperature",
@@ -127,7 +125,6 @@ def test_telemetry_bundle_with_sensors():
     }
 
     bundle = TelemetryBundle(**bundle_data)
-    assert bundle.device_uid == "test-device-123"
     assert "temperature" in bundle.sensors
     assert "pm2p5" in bundle.sensors
 
@@ -141,7 +138,6 @@ def test_telemetry_bundle_with_sensors():
 def test_get_latest_value():
     """Test getting latest value from metric with multiple readings."""
     bundle = TelemetryBundle(
-        device_uid="test-device",
         sensors={
             "temperature": TelemetryMetric(
                 name="temperature",

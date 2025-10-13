@@ -69,7 +69,8 @@
 ### Structure
 - `TelemetryValue`: timestamp (ISO 8601), value (Optional[float])
 - `TelemetryMetric`: name, display_name, unit, description (Optional), values (List[TelemetryValue])
-- `TelemetryBundle`: device_uid, sensors (Dict[str, TelemetryMetric])
+- `TelemetryBundle`: sensors (Dict[str, TelemetryMetric])
+  - Note: The API response does NOT include a device identifier; the device is known from the request context
 
 ### Units
 - Temperature: °C
@@ -157,10 +158,10 @@
 ### GET /api/v1/devices/{id}/readings_by_date/
 
 **Optional query params**
-- `start`: ISO 8601 with timezone, e.g., `2025-08-21T10:00:00+03:00`. If omitted, returns latest available data.
-- `end`: ISO 8601 with timezone. If omitted, returns latest available data.
-- `sensors`: comma-separated list of metric keys (e.g., `temperature,pm2p5,co2`)
-- `aggregate`: optional; one of `hourly|daily` for downsampling
+- `start-date`: Start date for data fetching. Use 'today' or format 'YYYY-MM-DD'. If omitted, returns latest available data.
+- `end-date`: End date for data fetching. Use 'today' or format 'YYYY-MM-DD'. If omitted, returns latest available data.
+- `sensor`: Filter by specific sensor name (e.g., `temperature`, `pm2p5`). Leave blank for all sensors.
+- `period`: Data aggregation period. Values: `day` or `hour`.
 
 **Response structure (SensorReadingsSerializer-aligned, camelCase wire format)**
 ```json
@@ -208,6 +209,7 @@
 - `values` sorted by timestamp ascending (oldest → newest)
 - If requested metric has no data, include with `"values": []`
 - Latest reading: pick entry with max `timestamp` from `values`
+- Response does NOT include device ID or UID; the device is known from the request path parameter
 
 ## Endpoints (Phase B: Streaming; placeholder)
 - SSE or WebSocket endpoint TBD.

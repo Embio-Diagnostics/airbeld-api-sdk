@@ -1,7 +1,6 @@
 """Async HTTP client for the Airbeld API."""
 
 import time
-from datetime import datetime
 from typing import Any
 from urllib.parse import urljoin
 
@@ -142,19 +141,19 @@ class AirbeldClient:
     async def async_get_readings_by_date(
         self,
         device_id: int,
-        start: datetime | None = None,
-        end: datetime | None = None,
-        sensors: list[str] | None = None,
-        aggregate: str | None = None,
+        start_date: str | None = None,
+        end_date: str | None = None,
+        sensor: str | None = None,
+        period: str | None = None,
     ) -> TelemetryBundle:
         """Get telemetry readings for a device within a date range.
 
         Args:
             device_id: Device ID (int)
-            start: Optional start datetime (with timezone). If omitted, returns latest data.
-            end: Optional end datetime (with timezone). If omitted, returns latest data.
-            sensors: Optional list of sensor keys to filter (e.g., ["temperature", "pm2p5"])
-            aggregate: Optional aggregation level ("hourly" or "daily")
+            start_date: Optional start date. Use 'today' or format 'YYYY-MM-DD'. If omitted, returns latest data.
+            end_date: Optional end date. Use 'today' or format 'YYYY-MM-DD'. If omitted, returns latest data.
+            sensor: Optional sensor name to filter (e.g., "temperature", "pm2p5"). Leave blank for all sensors.
+            period: Optional data aggregation period. Values: "day" or "hour".
 
         Returns:
             TelemetryBundle with sensor readings
@@ -168,22 +167,22 @@ class AirbeldClient:
         # Build query parameters
         params: dict[str, str] = {}
 
-        if start is not None:
-            params["start"] = start.isoformat()
+        if start_date is not None:
+            params["start-date"] = start_date
 
-        if end is not None:
-            params["end"] = end.isoformat()
+        if end_date is not None:
+            params["end-date"] = end_date
 
-        if sensors:
-            params["sensors"] = ",".join(sensors)
+        if sensor:
+            params["sensor"] = sensor
 
-        if aggregate:
-            params["aggregate"] = aggregate
+        if period:
+            params["period"] = period
 
         response = await self._request(
             "GET", f"devices/{device_id}/readings_by_date/", params=params
         )
         readings_data = response.json()
 
-        # Create TelemetryBundle with device_uid for compatibility
-        return TelemetryBundle(device_uid=str(device_id), **readings_data)
+        # API response contains only sensors data, which matches TelemetryBundle
+        return TelemetryBundle(**readings_data)

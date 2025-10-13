@@ -79,7 +79,6 @@ class TelemetryMetric(BaseModel):
 class TelemetryBundle(BaseModel):
     """Bundle of telemetry sensors for a device."""
 
-    device_uid: str
     sensors: dict[str, TelemetryMetric] = Field(default_factory=dict)
 
     @property
