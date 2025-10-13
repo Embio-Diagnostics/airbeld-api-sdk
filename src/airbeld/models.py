@@ -3,11 +3,13 @@
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class TokenSet(BaseModel):
     """Authentication token set from POST /api/v1/auth/token/ (camelCase wire format)."""
+
+    model_config = ConfigDict(populate_by_name=True)
 
     access_token: str = Field(alias="accessToken")
     refresh_token: str = Field(alias="refreshToken")
@@ -17,6 +19,8 @@ class TokenSet(BaseModel):
 
 class DeviceSummary(BaseModel):
     """Device summary information from GET /api/v1/devices/ (camelCase wire format)."""
+
+    model_config = ConfigDict(populate_by_name=True)
 
     uid: str = Field(..., min_length=1, max_length=255)
     id: int
@@ -34,23 +38,23 @@ class DeviceSummary(BaseModel):
 
 
 class Device(BaseModel):
-    """Device information from the Airbeld API."""
+    """Device information from the Airbeld API (extended model for future detailed endpoints)."""
+
+    model_config = ConfigDict(populate_by_name=True)
 
     uid: str = Field(..., min_length=1, max_length=255)
     name: str
-    display_name: str | None = None
-    device_type: str
+    display_name: str | None = Field(default=None, alias="displayName")
+    device_type: str = Field(alias="deviceType")
     status: Literal["online", "offline"]
-    is_locked: bool
-    hardware_model: str | None = None
-    hardware_version: str | None = None
+    is_locked: bool = Field(alias="isLocked")
+    hardware_model: str | None = Field(default=None, alias="hardwareModel")
+    hardware_version: str | None = Field(default=None, alias="hardwareVersion")
     manufacturer: str | None = None
-    serial_number: str | None = None
-    sector_id: str | None = None
-    sector_name: str | None = None
+    serial_number: str | None = Field(default=None, alias="serialNumber")
+    sector_id: str | None = Field(default=None, alias="sectorId")
+    sector_name: str | None = Field(default=None, alias="sectorName")
     description: str | None = None
-    created_at: datetime
-    updated_at: datetime
 
 
 class TelemetryValue(BaseModel):
@@ -61,10 +65,12 @@ class TelemetryValue(BaseModel):
 
 
 class TelemetryMetric(BaseModel):
-    """Telemetry metric containing metadata and values."""
+    """Telemetry metric containing metadata and values (camelCase wire format)."""
+
+    model_config = ConfigDict(populate_by_name=True)
 
     name: str
-    display_name: str | None = None
+    display_name: str | None = Field(default=None, alias="displayName")
     unit: str
     description: str | None = None
     values: list[TelemetryValue] = Field(default_factory=list)

@@ -102,14 +102,14 @@ async def test_readings_by_date_uses_id():
     device_id = 123
 
     with patch.object(httpx.AsyncClient, "request") as mock_request:
-        # Mock successful readings response
+        # Mock successful readings response (using camelCase as API returns)
         mock_request.return_value = mock_response(
             200,
             {
                 "sensors": {
                     "temperature": {
                         "name": "temperature",
-                        "display_name": "Temperature",
+                        "displayName": "Temperature",
                         "unit": "°C",
                         "values": [{"timestamp": "2025-08-21T12:36:17+03:00", "value": 23.8}],
                     }
@@ -198,3 +198,68 @@ async def test_device_list_parsing():
             assert device2.display_name is None  # Should be None when missing
             assert device2.is_locked is True
             assert device2.sector_id is None
+
+
+@pytest.mark.asyncio
+async def test_get_latest_readings_without_dates():
+    """Test calling readings endpoint without start/end dates to get latest data."""
+    device_id = 123
+
+    with patch.object(httpx.AsyncClient, "request") as mock_request:
+        # Mock successful readings response with latest data (using camelCase as API returns)
+        mock_request.return_value = mock_response(
+            200,
+            {
+                "sensors": {
+                    "temperature": {
+                        "name": "temperature",
+                        "displayName": "Temperature",
+                        "unit": "°C",
+                        "values": [
+                            {"timestamp": "2025-08-21T14:30:00+03:00", "value": 24.5}
+                        ],
+                    },
+                    "pm2p5": {
+                        "name": "pm2p5",
+                        "displayName": "PM 2.5",
+                        "unit": "µg/m³",
+                        "values": [
+                            {"timestamp": "2025-08-21T14:30:00+03:00", "value": 15.2}
+                        ],
+                    },
+                }
+            },
+        )
+
+        async with AirbeldClient(token="test-token") as client:
+            # Call without start/end dates
+            readings = await client.async_get_readings_by_date(device_id=device_id)
+
+            # Verify correct path was called
+            mock_request.assert_called_once()
+            call_args = mock_request.call_args
+            called_url = str(call_args[0][1])  # method, url
+            assert str(device_id) in called_url
+            assert "readings_by_date" in called_url
+
+            # Verify query params do NOT contain start/end
+            call_kwargs = call_args[1]  # kwargs
+            params = call_kwargs.get("params", {})
+            assert "start" not in params
+            assert "end" not in params
+
+            # Verify response structure
+            assert isinstance(readings, TelemetryBundle)
+            assert readings.device_uid == str(device_id)
+            assert "temperature" in readings.sensors
+            assert "pm2p5" in readings.sensors
+
+            # Verify we can use get_latest_value helper
+            latest_temp = readings.get_latest_value("temperature")
+            assert latest_temp == 24.5
+
+            # Verify display_name was properly parsed from camelCase displayName
+            temp_metric = readings.sensors["temperature"]
+            assert temp_metric.display_name == "Temperature"
+            pm_metric = readings.sensors["pm2p5"]
+            assert pm_metric.display_name == "PM 2.5"
