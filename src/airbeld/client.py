@@ -13,7 +13,7 @@ from tenacity import (
 )
 
 from .exceptions import ApiError, AuthError, NetworkError, RateLimitError
-from .models import DeviceSummary, TelemetryBundle
+from .models import DeviceReadings, DeviceSummary, Readings
 from .version import get_user_agent
 
 
@@ -145,7 +145,7 @@ class AirbeldClient:
         end_date: str | None = None,
         sensor: str | None = None,
         period: str | None = None,
-    ) -> TelemetryBundle:
+    ) -> Readings:
         """Get telemetry readings for a device within a date range.
 
         Args:
@@ -156,7 +156,7 @@ class AirbeldClient:
             period: Optional data aggregation period. Values: "day" or "hour".
 
         Returns:
-            TelemetryBundle with sensor readings
+            Readings object containing sensor readings
 
         Raises:
             AuthError: Authentication failed (401/403)
@@ -184,5 +184,53 @@ class AirbeldClient:
         )
         readings_data = response.json()
 
-        # API response contains only sensors data, which matches TelemetryBundle
-        return TelemetryBundle(**readings_data)
+        # API response contains only sensors data, which matches Readings
+        return Readings(**readings_data)
+
+    async def async_get_all_readings_by_date(
+        self,
+        start_date: str | None = None,
+        end_date: str | None = None,
+        sensor: str | None = None,
+        period: str | None = None,
+    ) -> list[DeviceReadings]:
+        """Get telemetry readings for all devices within a date range.
+
+        Args:
+            start_date: Optional start date. Use 'today' or format 'YYYY-MM-DD'. If omitted, returns latest data.
+            end_date: Optional end date. Use 'today' or format 'YYYY-MM-DD'. If omitted, returns latest data.
+            sensor: Optional sensor name to filter (e.g., "temperature", "pm2p5"). Leave blank for all sensors.
+            period: Optional data aggregation period. Values: "day" or "hour".
+
+        Returns:
+            List of DeviceReadings objects, each containing device metadata and sensor readings
+
+        Raises:
+            AuthError: Authentication failed (401/403)
+            ApiError: API errors including 413 (range too large)
+            RateLimitError: Rate limit exceeded (429)
+            NetworkError: Network connectivity issues
+        """
+        # Build query parameters
+        params: dict[str, str] = {}
+
+        if start_date is not None:
+            params["start-date"] = start_date
+
+        if end_date is not None:
+            params["end-date"] = end_date
+
+        if sensor:
+            params["sensor"] = sensor
+
+        if period:
+            params["period"] = period
+
+        response = await self._request(
+            "GET", "devices/all_readings_by_date/", params=params
+        )
+        response_data = response.json()
+
+        # API response is wrapped in a "devices" key
+        devices_list = response_data.get("devices", [])
+        return [DeviceReadings(**device) for device in devices_list]

@@ -76,9 +76,38 @@ class TelemetryMetric(BaseModel):
     values: list[TelemetryValue] = Field(default_factory=list)
 
 
-class TelemetryBundle(BaseModel):
-    """Bundle of telemetry sensors for a device."""
+class Readings(BaseModel):
+    """Container for sensor readings."""
 
+    sensors: dict[str, TelemetryMetric] = Field(default_factory=dict)
+
+    @property
+    def pm2_5(self) -> TelemetryMetric | None:
+        """Access PM 2.5 metric with Pythonic naming."""
+        return self.sensors.get("pm2p5")
+
+    def get_latest_value(self, metric_name: str) -> float | None:
+        """Get the latest value for a specific metric."""
+        metric = self.sensors.get(metric_name)
+        if not metric or not metric.values:
+            return None
+
+        latest = max(metric.values, key=lambda v: v.timestamp)
+        return latest.value
+
+
+class DeviceReadings(BaseModel):
+    """Device with telemetry readings from GET /api/v1/devices/all_readings_by_date/ (camelCase wire format)."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    id: int
+    uid: str = Field(..., min_length=1, max_length=255)
+    name: str
+    display_name: str | None = Field(default=None, alias="displayName")
+    location: str | None = None
+    sector: str | None = None
+    timezone: str
     sensors: dict[str, TelemetryMetric] = Field(default_factory=dict)
 
     @property

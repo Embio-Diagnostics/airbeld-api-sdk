@@ -5,8 +5,9 @@ from .client import AirbeldClient
 from .exceptions import AirbeldError, ApiError, AuthError, NetworkError, RateLimitError
 from .models import (
     Device,
+    DeviceReadings,
     DeviceSummary,
-    TelemetryBundle,
+    Readings,
     TelemetryMetric,
     TelemetryValue,
     TokenSet,
@@ -19,10 +20,11 @@ __all__ = [
     "ApiError",
     "AuthError",
     "Device",
+    "DeviceReadings",
     "DeviceSummary",
     "NetworkError",
     "RateLimitError",
-    "TelemetryBundle",
+    "Readings",
     "TelemetryMetric",
     "TelemetryValue",
     "TokenSet",

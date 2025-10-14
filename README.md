@@ -203,7 +203,7 @@ Get telemetry readings for a device.
 - `sensor` (str, optional): Single sensor name to filter (e.g., `"temperature"`, `"pm2p5"`). If omitted, returns all sensors.
 - `period` (str, optional): Data aggregation period. Values: `"hour"` or `"day"`.
 
-**Returns:** `TelemetryBundle` - Object containing sensor readings
+**Returns:** `Readings` - Object containing sensor readings
 
 **Raises:**
 - `AuthError`: Authentication failed (401/403)
@@ -228,6 +228,48 @@ readings = await client.async_get_readings_by_date(
 readings = await client.async_get_readings_by_date(
     device_id=123,
     sensor="temperature"
+)
+```
+
+---
+
+#### `async_get_all_readings_by_date(start_date, end_date, sensor, period)`
+
+Get telemetry readings for all user devices.
+
+**Parameters:**
+- `start_date` (str, optional): Start date in `YYYY-MM-DD` format or `'today'`. If omitted, returns latest data.
+- `end_date` (str, optional): End date in `YYYY-MM-DD` format or `'today'`. If omitted, returns latest data.
+- `sensor` (str, optional): Single sensor name to filter (e.g., `"temperature"`, `"pm2p5"`). If omitted, returns all sensors.
+- `period` (str, optional): Data aggregation period. Values: `"hour"` or `"day"`.
+
+**Returns:** `list[DeviceReadings]` - List of device objects with metadata and sensor readings
+
+**Raises:**
+- `AuthError`: Authentication failed (401/403)
+- `ApiError`: API errors including 413 (range too large)
+- `RateLimitError`: Rate limit exceeded (429)
+- `NetworkError`: Network connectivity issues
+
+**Examples:**
+```python
+# Get latest readings for all devices
+devices = await client.async_get_all_readings_by_date()
+for device in devices:
+    print(f"Device: {device.display_name or device.name}")
+    temp = device.get_latest_value("temperature")
+    print(f"  Temperature: {temp}°C")
+
+# Get historical readings with date range
+devices = await client.async_get_all_readings_by_date(
+    start_date="2025-10-14",
+    end_date="2025-10-14",
+    period="hour"
+)
+
+# Filter to single sensor
+devices = await client.async_get_all_readings_by_date(
+    sensor="pm2p5"
 )
 ```
 
@@ -301,9 +343,27 @@ Device information object.
 - `location_id` (int | None): Location ID
 - `timezone` (str): IANA timezone
 
-#### `TelemetryBundle`
+#### `DeviceReadings`
 
-Container for sensor telemetry data.
+Device with telemetry readings (returned by `async_get_all_readings_by_date`).
+
+**Attributes:**
+- `id` (int): Device ID
+- `uid` (str): Unique device identifier
+- `name` (str): Device name
+- `display_name` (str | None): Custom display name
+- `location` (str | None): Location name
+- `sector` (str | None): Sector name
+- `timezone` (str): IANA timezone
+- `sensors` (dict[str, TelemetryMetric]): Dictionary of sensor metrics by sensor name
+
+**Methods:**
+- `get_latest_value(metric_name: str) -> float | None`: Get the latest value for a specific sensor
+- `pm2_5` (property): Shortcut to access PM 2.5 metric (returns `TelemetryMetric | None`)
+
+#### `Readings`
+
+Container for sensor readings.
 
 **Attributes:**
 - `sensors` (dict[str, TelemetryMetric]): Dictionary of sensor metrics by sensor name

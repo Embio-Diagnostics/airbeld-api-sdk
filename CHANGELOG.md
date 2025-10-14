@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.0] - 2025-10-14
+
+### Breaking Changes
+
+- **Renamed `TelemetryBundle` → `Readings`** for naming consistency with API methods and clearer semantics
+
+### Added
+
+- **New endpoint `async_get_all_readings_by_date()`** - Fetch telemetry readings for all user devices in a single API call
+- **New model `DeviceReadings`** - Device object with metadata and sensor readings, returned by `async_get_all_readings_by_date()`
+- New example `examples/get_all_readings.py` demonstrating how to fetch readings for all devices
+- Comprehensive API documentation for the new endpoint in README
+
+### Changed
+
+- API Reference documentation updated with `async_get_all_readings_by_date()` method and `DeviceReadings` model
+- Model naming improved for consistency: `TelemetryBundle` → `Readings`
+
 ## [0.3.0] - 2025-10-14
 
 ### Breaking Changes

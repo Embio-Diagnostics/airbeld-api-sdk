@@ -6,8 +6,9 @@ import pytest
 
 from airbeld.models import (
     Device,
+    DeviceReadings,
     DeviceSummary,
-    TelemetryBundle,
+    Readings,
     TelemetryMetric,
     TelemetryValue,
 )
@@ -97,17 +98,17 @@ def test_telemetry_metric():
     assert metric.values[0].value == 23.8
 
 
-def test_telemetry_bundle_empty():
-    """Test TelemetryBundle with no sensors."""
-    bundle = TelemetryBundle()
-    assert bundle.sensors == {}
-    assert bundle.pm2_5 is None
-    assert bundle.get_latest_value("temperature") is None
+def test_readings_empty():
+    """Test Readings with no sensors."""
+    readings = Readings()
+    assert readings.sensors == {}
+    assert readings.pm2_5 is None
+    assert readings.get_latest_value("temperature") is None
 
 
-def test_telemetry_bundle_with_sensors():
-    """Test TelemetryBundle with multiple sensors (matches actual API response)."""
-    bundle_data = {
+def test_readings_with_sensors():
+    """Test Readings with multiple sensors (matches actual API response)."""
+    readings_data = {
         "sensors": {
             "temperature": {
                 "name": "temperature",
@@ -124,12 +125,12 @@ def test_telemetry_bundle_with_sensors():
         },
     }
 
-    bundle = TelemetryBundle(**bundle_data)
-    assert "temperature" in bundle.sensors
-    assert "pm2p5" in bundle.sensors
+    readings = Readings(**readings_data)
+    assert "temperature" in readings.sensors
+    assert "pm2p5" in readings.sensors
 
     # Test PM 2.5 alias
-    pm25_metric = bundle.pm2_5
+    pm25_metric = readings.pm2_5
     assert pm25_metric is not None
     assert pm25_metric.display_name == "PM 2.5"
     assert pm25_metric.unit == "µg/m³"
@@ -137,7 +138,7 @@ def test_telemetry_bundle_with_sensors():
 
 def test_get_latest_value():
     """Test getting latest value from metric with multiple readings."""
-    bundle = TelemetryBundle(
+    readings = Readings(
         sensors={
             "temperature": TelemetryMetric(
                 name="temperature",
@@ -162,11 +163,11 @@ def test_get_latest_value():
     )
 
     # Should return value from latest timestamp (12:30)
-    latest_temp = bundle.get_latest_value("temperature")
+    latest_temp = readings.get_latest_value("temperature")
     assert latest_temp == 23.5
 
     # Non-existent metric
-    assert bundle.get_latest_value("humidity") is None
+    assert readings.get_latest_value("humidity") is None
 
 
 def test_device_uid_validation():
@@ -241,3 +242,78 @@ def test_device_summary_optional_display_name():
     assert device.uid == "706bb7907bbd4c4752ff"
     assert device.display_name is None  # Should be None when not provided
     assert device.name == "AirBELD_0022"
+
+
+def test_device_readings_full():
+    """Test DeviceReadings with all fields and sensors (matches API response format)."""
+    device_data = {
+        "id": 5,
+        "uid": "706bb7907bbd4c4752ff",
+        "name": "AirBELD_0022",
+        "displayName": "Living Room Sensor",
+        "location": "Embio Diagnostics LTD",
+        "sector": "HW department 2",
+        "timezone": "Europe/Athens",
+        "sensors": {
+            "temperature": {
+                "name": "temperature",
+                "displayName": "Temperature",
+                "unit": "°C",
+                "values": [{"timestamp": "2025-10-14T12:00:00+03:00", "value": 23.5}],
+            },
+            "pm2p5": {
+                "name": "pm2p5",
+                "displayName": "PM 2.5",
+                "unit": "µg/m³",
+                "values": [{"timestamp": "2025-10-14T12:00:00+03:00", "value": 15.2}],
+            },
+        },
+    }
+
+    device = DeviceReadings(**device_data)
+    assert device.id == 5
+    assert device.uid == "706bb7907bbd4c4752ff"
+    assert device.name == "AirBELD_0022"
+    assert device.display_name == "Living Room Sensor"
+    assert device.location == "Embio Diagnostics LTD"
+    assert device.sector == "HW department 2"
+    assert device.timezone == "Europe/Athens"
+
+    # Check sensors
+    assert "temperature" in device.sensors
+    assert "pm2p5" in device.sensors
+
+    # Test PM 2.5 alias
+    pm25_metric = device.pm2_5
+    assert pm25_metric is not None
+    assert pm25_metric.display_name == "PM 2.5"
+
+    # Test get_latest_value
+    latest_temp = device.get_latest_value("temperature")
+    assert latest_temp == 23.5
+
+
+def test_device_readings_minimal():
+    """Test DeviceReadings with minimal fields (null location/sector)."""
+    device_data = {
+        "id": 6,
+        "uid": "another-device-uid",
+        "name": "Device_002",
+        "displayName": None,
+        "location": None,
+        "sector": None,
+        "timezone": "UTC",
+        "sensors": {},
+    }
+
+    device = DeviceReadings(**device_data)
+    assert device.id == 6
+    assert device.uid == "another-device-uid"
+    assert device.name == "Device_002"
+    assert device.display_name is None
+    assert device.location is None
+    assert device.sector is None
+    assert device.timezone == "UTC"
+    assert device.sensors == {}
+    assert device.pm2_5 is None
+    assert device.get_latest_value("temperature") is None

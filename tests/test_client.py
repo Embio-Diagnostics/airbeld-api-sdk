@@ -8,7 +8,7 @@ import pytest
 
 from airbeld.client import AirbeldClient
 from airbeld.exceptions import AuthError, RateLimitError
-from airbeld.models import DeviceSummary, TelemetryBundle
+from airbeld.models import DeviceReadings, DeviceSummary, Readings
 
 
 def mock_response(status_code: int, json_data=None, headers=None):
@@ -135,7 +135,7 @@ async def test_readings_by_date_uses_id():
             assert params["end-date"] == "2025-08-21"
 
             # Verify response structure
-            assert isinstance(readings, TelemetryBundle)
+            assert isinstance(readings, Readings)
             assert "temperature" in readings.sensors
 
 
@@ -246,7 +246,7 @@ async def test_get_latest_readings_without_dates():
             assert "end-date" not in params
 
             # Verify response structure
-            assert isinstance(readings, TelemetryBundle)
+            assert isinstance(readings, Readings)
             assert "temperature" in readings.sensors
             assert "pm2p5" in readings.sensors
 
@@ -259,3 +259,151 @@ async def test_get_latest_readings_without_dates():
             assert temp_metric.display_name == "Temperature"
             pm_metric = readings.sensors["pm2p5"]
             assert pm_metric.display_name == "PM 2.5"
+
+
+@pytest.mark.asyncio
+async def test_get_all_readings_by_date():
+    """Test all_readings_by_date endpoint returns list of devices with readings."""
+    with patch.object(httpx.AsyncClient, "request") as mock_request:
+        # Mock API response for all devices (using camelCase as API returns)
+        mock_request.return_value = mock_response(
+            200,
+            {
+                "devices": [
+                {
+                    "id": 5,
+                    "uid": "706bb7907bbd4c4752ff",
+                    "name": "AirBELD_0022",
+                    "displayName": "Living Room Sensor",
+                    "location": "Embio Diagnostics LTD",
+                    "sector": "HW department 2",
+                    "timezone": "Europe/Athens",
+                    "sensors": {
+                        "temperature": {
+                            "name": "temperature",
+                            "displayName": "Temperature",
+                            "unit": "°C",
+                            "values": [
+                                {"timestamp": "2025-10-14T12:00:00+03:00", "value": 23.5}
+                            ],
+                        }
+                    },
+                },
+                {
+                    "id": 6,
+                    "uid": "another-device-uid",
+                    "name": "Device_002",
+                    "displayName": None,
+                    "location": None,
+                    "sector": None,
+                    "timezone": "UTC",
+                    "sensors": {
+                        "pm2p5": {
+                            "name": "pm2p5",
+                            "displayName": "PM 2.5",
+                            "unit": "µg/m³",
+                            "values": [
+                                {"timestamp": "2025-10-14T12:00:00+03:00", "value": 15.2}
+                            ],
+                        }
+                    },
+                },
+            ]
+            },
+        )
+
+        async with AirbeldClient(token="test-token") as client:
+            # Call with date range
+            devices = await client.async_get_all_readings_by_date(
+                start_date="2025-10-14", end_date="2025-10-14", period="hour"
+            )
+
+            # Verify correct path was called
+            mock_request.assert_called_once()
+            call_args = mock_request.call_args
+            called_url = str(call_args[0][1])  # method, url
+            assert "all_readings_by_date" in called_url
+
+            # Verify query params
+            call_kwargs = call_args[1]  # kwargs
+            params = call_kwargs.get("params", {})
+            assert params["start-date"] == "2025-10-14"
+            assert params["end-date"] == "2025-10-14"
+            assert params["period"] == "hour"
+
+            # Verify response structure
+            assert isinstance(devices, list)
+            assert len(devices) == 2
+
+            # First device
+            device1 = devices[0]
+            assert isinstance(device1, DeviceReadings)
+            assert device1.id == 5
+            assert device1.uid == "706bb7907bbd4c4752ff"
+            assert device1.display_name == "Living Room Sensor"
+            assert device1.location == "Embio Diagnostics LTD"
+            assert device1.sector == "HW department 2"
+            assert "temperature" in device1.sensors
+            assert device1.get_latest_value("temperature") == 23.5
+
+            # Second device
+            device2 = devices[1]
+            assert device2.id == 6
+            assert device2.display_name is None
+            assert device2.location is None
+            assert "pm2p5" in device2.sensors
+            assert device2.pm2_5 is not None
+
+
+@pytest.mark.asyncio
+async def test_get_all_readings_without_dates():
+    """Test all_readings_by_date endpoint without dates to get latest data."""
+    with patch.object(httpx.AsyncClient, "request") as mock_request:
+        # Mock API response with latest data
+        mock_request.return_value = mock_response(
+            200,
+            {
+                "devices": [
+                {
+                    "id": 5,
+                    "uid": "706bb7907bbd4c4752ff",
+                    "name": "AirBELD_0022",
+                    "displayName": "Living Room",
+                    "location": "Office",
+                    "sector": "Floor 1",
+                    "timezone": "Europe/Athens",
+                    "sensors": {
+                        "temperature": {
+                            "name": "temperature",
+                            "displayName": "Temperature",
+                            "unit": "°C",
+                            "values": [
+                                {"timestamp": "2025-10-14T14:30:00+03:00", "value": 24.0}
+                            ],
+                        }
+                    },
+                }
+            ]
+            },
+        )
+
+        async with AirbeldClient(token="test-token") as client:
+            # Call without dates to get latest
+            devices = await client.async_get_all_readings_by_date()
+
+            # Verify correct path was called
+            mock_request.assert_called_once()
+            call_args = mock_request.call_args
+            called_url = str(call_args[0][1])
+            assert "all_readings_by_date" in called_url
+
+            # Verify no date params
+            call_kwargs = call_args[1]
+            params = call_kwargs.get("params", {})
+            assert "start-date" not in params
+            assert "end-date" not in params
+
+            # Verify response
+            assert len(devices) == 1
+            assert devices[0].id == 5
+            assert devices[0].get_latest_value("temperature") == 24.0
